@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .calculator {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      width: 320px;
+    }
+
+    .display {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      text-align: right;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .expression {
+      color: #a8b2c8;
+      font-size: 14px;
+      min-height: 20px;
+      word-break: break-all;
+    }
+
+    .result {
+      color: #e0e0e0;
+      font-size: 36px;
+      font-weight: 300;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 500;
+      height: 64px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    button:active {
+      transform: scale(0.93);
+    }
+
+    /* Number buttons */
+    .btn-num {
+      background: #1a2a4a;
+      color: #e0e0e0;
+    }
+
+    .btn-num:hover {
+      background: #243560;
+    }
+
+    /* Operator buttons */
+    .btn-op {
+      background: #e94560;
+      color: #fff;
+    }
+
+    .btn-op:hover {
+      background: #ff5577;
+    }
+
+    /* Equals button */
+    .btn-eq {
+      background: #0f6ef2;
+      color: #fff;
+    }
+
+    .btn-eq:hover {
+      background: #1a82ff;
+    }
+
+    /* Function buttons (AC, +/-, %) */
+    .btn-fn {
+      background: #2a3a5a;
+      color: #a8b2c8;
+    }
+
+    .btn-fn:hover {
+      background: #3a4a6a;
+    }
+
+    /* Special layout */
+    .btn-zero {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn-fn" data-action="clear">AC</button>
+      <button class="btn-fn" data-action="sign">+/-</button>
+      <button class="btn-fn" data-action="percent">%</button>
+      <button class="btn-op" data-action="operator" data-value="/">÷</button>
+
+      <button class="btn-num" data-action="digit" data-value="7">7</button>
+      <button class="btn-num" data-action="digit" data-value="8">8</button>
+      <button class="btn-num" data-action="digit" data-value="9">9</button>
+      <button class="btn-op" data-action="operator" data-value="*">×</button>
+
+      <button class="btn-num" data-action="digit" data-value="4">4</button>
+      <button class="btn-num" data-action="digit" data-value="5">5</button>
+      <button class="btn-num" data-action="digit" data-value="6">6</button>
+      <button class="btn-op" data-action="operator" data-value="-">−</button>
+
+      <button class="btn-num" data-action="digit" data-value="1">1</button>
+      <button class="btn-num" data-action="digit" data-value="2">2</button>
+      <button class="btn-num" data-action="digit" data-value="3">3</button>
+      <button class="btn-op" data-action="operator" data-value="+">+</button>
+
+      <button class="btn-num btn-zero" data-action="digit" data-value="0">0</button>
+      <button class="btn-num" data-action="decimal">.</button>
+      <button class="btn-eq" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script>
+    const resultEl = document.getElementById('result');
+    const expressionEl = document.getElementById('expression');
+
+    let currentVal = '0';
+    let prevVal = '';
+    let operator = null;
+    let shouldResetScreen = false;
+
+    function updateDisplay() {
+      resultEl.textContent = currentVal;
+    }
+
+    function setExpression(text) {
+      expressionEl.textContent = text;
+    }
+
+    function handleDigit(digit) {
+      if (shouldResetScreen) {
+        currentVal = digit;
+        shouldResetScreen = false;
+      } else {
+        currentVal = currentVal === '0' ? digit : currentVal + digit;
+      }
+      // Limit display length
+      if (currentVal.replace('.', '').replace('-', '').length > 12) return;
+      updateDisplay();
+    }
+
+    function handleDecimal() {
+      if (shouldResetScreen) {
+        currentVal = '0.';
+        shouldResetScreen = false;
+        updateDisplay();
+        return;
+      }
+      if (!currentVal.includes('.')) {
+        currentVal += '.';
+        updateDisplay();
+      }
+    }
+
+    function handleOperator(op) {
+      if (operator && !shouldResetScreen) {
+        calculate();
+      }
+      prevVal = currentVal;
+      operator = op;
+      shouldResetScreen = true;
+      const opSymbol = { '+': '+', '-': '−', '*': '×', '/': '÷' }[op];
+      setExpression(`${prevVal} ${opSymbol}`);
+    }
+
+    function calculate() {
+      if (!operator || !prevVal) return;
+
+      const a = parseFloat(prevVal);
+      const b = parseFloat(currentVal);
+      let result;
+
+      switch (operator) {
+        case '+': result = a + b; break;
+        case '-': result = a - b; break;
+        case '*': result = a * b; break;
+        case '/':
+          if (b === 0) {
+            currentVal = 'Error';
+            setExpression('');
+            operator = null;
+            prevVal = '';
+            updateDisplay();
+            return;
+          }
+          result = a / b;
+          break;
+        default: return;
+      }
+
+      const opSymbol = { '+': '+', '-': '−', '*': '×', '/': '÷' }[operator];
+      setExpression(`${prevVal} ${opSymbol} ${currentVal} =`);
+
+      // Round to avoid floating-point weirdness
+      currentVal = parseFloat(result.toPrecision(12)).toString();
+      operator = null;
+      prevVal = '';
+      shouldResetScreen = true;
+      updateDisplay();
+    }
+
+    function handleClear() {
+      currentVal = '0';
+      prevVal = '';
+      operator = null;
+      shouldResetScreen = false;
+      setExpression('');
+      updateDisplay();
+    }
+
+    function handleSign() {
+      if (currentVal === '0' || currentVal === 'Error') return;
+      currentVal = currentVal.startsWith('-')
+        ? currentVal.slice(1)
+        : '-' + currentVal;
+      updateDisplay();
+    }
+
+    function handlePercent() {
+      if (currentVal === 'Error') return;
+      currentVal = (parseFloat(currentVal) / 100).toString();
+      updateDisplay();
+    }
+
+    // Button click handler
+    document.querySelector('.buttons').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const value = btn.dataset.value;
+
+      switch (action) {
+        case 'digit':    handleDigit(value); break;
+        case 'decimal':  handleDecimal(); break;
+        case 'operator': handleOperator(value); break;
+        case 'equals':   calculate(); break;
+        case 'clear':    handleClear(); break;
+        case 'sign':     handleSign(); break;
+        case 'percent':  handlePercent(); break;
+      }
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '0' && e.key <= '9') handleDigit(e.key);
+      else if (e.key === '.') handleDecimal();
+      else if (['+', '-', '*', '/'].includes(e.key)) handleOperator(e.key);
+      else if (e.key === 'Enter' || e.key === '=') calculate();
+      else if (e.key === 'Escape') handleClear();
+      else if (e.key === 'Backspace') {
+        if (currentVal.length > 1) {
+          currentVal = currentVal.slice(0, -1);
+        } else {
+          currentVal = '0';
+        }
+        updateDisplay();
+      }
+    });
+  </script>
+</body>
+</html>
